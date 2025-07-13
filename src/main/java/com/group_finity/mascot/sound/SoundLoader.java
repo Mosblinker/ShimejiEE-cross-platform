@@ -1,14 +1,6 @@
 package com.group_finity.mascot.sound;
 
 import com.group_finity.mascot.imageset.ShimejiProgramFolder;
-
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.FloatControl;
-import javax.sound.sampled.LineEvent;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -17,6 +9,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class SoundLoader implements SoundStore {
 
@@ -100,19 +99,21 @@ public class SoundLoader implements SoundStore {
     }
 
     private static Clip createClipFrom(Path soundPath, float volume) throws UnsupportedAudioFileException, IOException, LineUnavailableException {
-        AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundPath.toFile());
 
-        Clip clip = AudioSystem.getClip();
+        Clip clip;
+        
+        try(AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundPath.toFile())){
+            clip = AudioSystem.getClip();
+            clip.open(audioInputStream);
+            ((FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN)).setValue(volume);
 
-        clip.open(audioInputStream);
-        ((FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN)).setValue(volume);
-
-        clip.addLineListener(e -> {
-            if (e.getType() == LineEvent.Type.STOP) {
-                ((Clip) e.getLine()).stop();
-            }
-        });
-
+            clip.addLineListener(e -> {
+                if (e.getType() == LineEvent.Type.STOP) {
+                    ((Clip) e.getLine()).stop();
+                }
+            });
+        }
+        
         return clip;
     }
 
